@@ -1,0 +1,26 @@
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: borrow-books
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: borrow-books
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mypasswordmysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - borrow-books_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  borrow-books_network:
+    driver: bridge

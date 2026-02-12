@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/provider/database/generated"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator prismabox { 
+  provider = "prismabox"
+  typeboxImportDependencyName = "elysia"
+  typeboxImportVariableName = "t"
+  inputModel = true
+  output   = "../src/provider/database/prismabox"
+}
+
+// ตารางที่ 1: Members (ตารางสมาชิก)
+model Member {
+  id         Int         @id @default(autoincrement()) @map("member_id")
+  username   String      @unique @db.VarChar(50)
+  password   String      @db.VarChar(255)
+  fullName   String      @map("full_name") @db.VarChar(100)
+  role       Role        @default(user)
+  borrowings Borrowing[]
+
+  @@map("Members")
+}
+
+// ตารางที่ 2: Books (ตารางหนังสือ)
+model Book {
+  id         Int         @id @default(autoincrement()) @map("book_id")
+  title      String      @db.VarChar(200)
+  author     String?     @db.VarChar(100)
+  status     BookStatus  @default(available)
+  borrowings Borrowing[]
+
+  @@map("Books")
+}
+
+// ตารางที่ 3: Borrowing (ตารางการยืม-คืน)
+model Borrowing {
+  id         Int       @id @default(autoincrement()) @map("borrow_id")
+  memberId   Int       @map("member_id")
+  bookId     Int       @map("book_id")
+  borrowDate DateTime  @default(now()) @map("borrow_date") @db.DateTime(0)
+  returnDate DateTime? @map("return_date") @db.DateTime(0)
+
+  // Relations
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([memberId])
+  @@map("Borrowing")
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum BookStatus {
+  available
+  borrowed
+}
