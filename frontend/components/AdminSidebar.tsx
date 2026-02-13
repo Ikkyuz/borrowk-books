@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -14,48 +14,51 @@ export default function AdminSidebar(props: any) {
   };
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1 bg-slate-950">
       <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }}>
-        {/* Header section - Admin Profile Context */}
-        <View className="border-b border-slate-700 bg-slate-800/80 p-6 pb-10">
-          <View className="mb-4 h-12 w-12 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-500/20">
-            <Ionicons name="shield-checkmark" size={24} color="white" />
+        {/* Profile Header */}
+        <View className="bg-slate-900 px-6 pb-10 pt-16 rounded-br-[50px] border-b border-slate-800">
+          <View className="mb-5 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-xl shadow-blue-500/40">
+            <Ionicons name="shield-checkmark" size={32} color="white" />
           </View>
-          <Text className="text-lg font-bold tracking-tight text-white">
+          
+          <Text className="text-xl font-black tracking-tight text-white" numberOfLines={1}>
             {user?.fullName || 'ผู้ดูแลระบบ'}
           </Text>
-          <Text className="mt-0.5 text-[10px] font-black uppercase tracking-[2px] text-blue-400">
-            Admin Console
-          </Text>
-          
-          <View className="mt-4 flex-row items-center">
-            <View className="mr-2 h-2 w-2 rounded-full bg-green-500" />
-            <Text className="text-xs font-medium text-slate-400">กำลังใช้งาน (Online)</Text>
+          <View className="mt-1 flex-row items-center">
+            <View className="mr-2 h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-400">
+              Administrator
+            </Text>
           </View>
         </View>
 
-        {/* Menu Section */}
-        <View className="flex-1 px-2 pt-6">
-          <Text className="mb-4 ml-4 text-[10px] font-black uppercase tracking-[2px] text-slate-500">
-            การจัดการระบบ
+        {/* Navigation Menu */}
+        <View className="flex-1 px-3 pt-8">
+          <Text className="mb-4 ml-4 text-[9px] font-black uppercase tracking-[3px] text-slate-600">
+            Main Management
           </Text>
           <DrawerItemList {...props} />
         </View>
       </DrawerContentScrollView>
 
-      {/* Logout Section */}
-      <View className="border-t border-slate-800 bg-slate-900 p-4">
+      {/* Footer / Logout */}
+      <View className="p-6 border-t border-slate-900 bg-slate-950">
         <TouchableOpacity
           onPress={handleLogout}
-          activeOpacity={0.7}
-          className="flex-row items-center rounded-2xl bg-slate-800/40 p-4">
-          <View className="mr-3 h-9 w-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
-            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          activeOpacity={0.8}
+          className="flex-row items-center rounded-2xl bg-red-500/10 border border-red-500/20 p-4">
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-red-500 shadow-lg shadow-red-500/30">
+            <Ionicons name="log-out" size={20} color="white" />
           </View>
-          <Text className="text-base font-bold text-red-500">ออกจากระบบ</Text>
+          <View>
+            <Text className="text-sm font-bold text-red-500">ออกจากระบบ</Text>
+            <Text className="text-[9px] font-medium text-red-400/60 uppercase">Sign out safely</Text>
+          </View>
         </TouchableOpacity>
-        <Text className="mt-4 text-center text-[10px] font-medium uppercase tracking-tighter text-slate-600">
-          Library Admin System v1.0.0
+        
+        <Text className="mt-6 text-center text-[10px] font-bold uppercase tracking-widest text-slate-700">
+          v1.2.0 • Build 2026
         </Text>
       </View>
     </View>

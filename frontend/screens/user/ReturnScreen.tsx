@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { borrowingApi } from '../../services/api';
+import { borrowingApi, bookApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ReturnScreen() {
-  const [borrowings, setBorrowings] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'holding' | 'returned'>('holding');
+  const [holdingItems, setHoldingItems] = useState<any[]>([]);
+  const [returnedItems, setReturnedItems] = useState<any[]>([]);
   const [allBooks, setAllBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [lastReturnedTitle, setLastReturnedTitle] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
 
   const loadData = async () => {
-    if (!user) return;
+    if (authLoading || !user?.id) return;
     setLoading(true);
     try {
       const [historyRes, booksRes] = await Promise.all([
@@ -19,16 +22,22 @@ export default function ReturnScreen() {
         bookApi.getAll()
       ]);
       setAllBooks(booksRes.data);
-      setBorrowings(historyRes.data.filter((i: any) => !i.returnDate));
+      
+      const allHistory = historyRes.data;
+      // แยกรายการตามสถานะ
+      setHoldingItems(allHistory.filter((i: any) => !i.returnDate));
+      setReturnedItems(allHistory.filter((i: any) => !!i.returnDate).sort((a: any, b: any) => 
+        new Date(b.returnDate).getTime() - new Date(a.returnDate).getTime()
+      ));
     } catch (e) {
-      const msg = 'โหลดข้อมูลรายการยืมไม่สำเร็จ';
+      const msg = 'โหลดข้อมูลไม่สำเร็จ';
       Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [user?.id, authLoading]);
 
   const getBookTitle = (bookId: number) => {
     return allBooks.find(b => b.id === bookId)?.title || `หนังสือ (ID: ${bookId})`;
@@ -36,25 +45,24 @@ export default function ReturnScreen() {
 
   const handleReturn = (item: any) => {
     const bookTitle = item.book?.title || getBookTitle(item.bookId);
-    const confirmMsg = `คุณต้องการคืน "${bookTitle}" ใช่หรือไม่?`;
+    const confirmMsg = `ยืนยันการคืนหนังสือ "${bookTitle}" ?`;
     
     if (Platform.OS === 'web') {
-      if (window.confirm(confirmMsg)) {
-        performReturn(item.id);
-      }
+      if (window.confirm(confirmMsg)) performReturn(item.id, bookTitle);
     } else {
       Alert.alert('ยืนยัน', confirmMsg, [
         { text: 'ยกเลิก' },
-        { text: 'คืนหนังสือ', onPress: () => performReturn(item.id) }
+        { text: 'คืนหนังสือ', onPress: () => performReturn(item.id, bookTitle) }
       ]);
     }
   };
 
-  const performReturn = async (id: number) => {
+  const performReturn = async (id: number, title: string) => {
     try {
       await borrowingApi.return(id);
-      const msg = 'คืนหนังสือเรียบร้อย';
-      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('สำเร็จ', msg);
+      setLastReturnedTitle(title);
+      setActiveTab('returned'); // สลับไปหน้า "คืนแล้ว" ทันทีเพื่อให้เห็นผลลัพธ์
+      setTimeout(() => setLastReturnedTitle(null), 5000);
       loadData();
     } catch (e) {
       const msg = 'การคืนล้มเหลว';
@@ -62,36 +70,103 @@ export default function ReturnScreen() {
     }
   };
 
+  const renderHeader = () => (
+    <View className="mb-6">
+      <Text className="text-3xl font-black text-slate-900 mb-6">การคืนหนังสือ</Text>
+      
+      {/* ระบบแถบสลับหน้า (Tabs) */}
+      <View className="flex-row bg-slate-100 p-1.5 rounded-[20px] mb-8">
+        <TouchableOpacity 
+          onPress={() => setActiveTab('holding')}
+          className={`flex-1 py-3 rounded-[15px] items-center flex-row justify-center ${activeTab === 'holding' ? 'bg-white shadow-sm' : ''}`}
+        >
+          <Ionicons name="book-outline" size={18} color={activeTab === 'holding' ? '#2563eb' : '#94a3b8'} />
+          <Text className={`ml-2 font-bold ${activeTab === 'holding' ? 'text-blue-600' : 'text-slate-400'}`}>
+            ต้องคืน ({holdingItems.length})
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          onPress={() => setActiveTab('returned')}
+          className={`flex-1 py-3 rounded-[15px] items-center flex-row justify-center ${activeTab === 'returned' ? 'bg-white shadow-sm' : ''}`}
+        >
+          <Ionicons name="checkmark-circle-outline" size={18} color={activeTab === 'returned' ? '#10b981' : '#94a3b8'} />
+          <Text className={`ml-2 font-bold ${activeTab === 'returned' ? 'text-green-600' : 'text-slate-400'}`}>
+            คืนแล้ว ({returnedItems.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* แจ้งเตือนเมื่อคืนสำเร็จ */}
+      {lastReturnedTitle && (
+        <View className="mb-6 bg-green-500 p-4 rounded-2xl flex-row items-center shadow-lg shadow-green-100">
+          <Ionicons name="checkmark-done" size={24} color="white" />
+          <Text className="text-white font-bold ml-3 flex-1">คืน "{lastReturnedTitle}" สำเร็จแล้ว!</Text>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <View className="flex-1 bg-white pt-12 px-6">
-      <Text className="text-2xl font-black text-slate-900 mb-6">คืนหนังสือ</Text>
+      <StatusBar barStyle="dark-content" />
       
-      {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" className="mt-10" />
-      ) : (
-        <FlatList
-          data={borrowings}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
-            <View className="flex-row items-center p-5 bg-white border border-slate-100 rounded-3xl mb-4 shadow-sm">
+      <FlatList
+        data={activeTab === 'holding' ? holdingItems : returnedItems}
+        keyExtractor={item => item.id.toString()}
+        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <View className={`p-5 rounded-[30px] mb-4 border ${activeTab === 'holding' ? 'bg-white border-slate-100 shadow-sm' : 'bg-slate-50 border-slate-50 opacity-80'}`}>
+            <View className="flex-row items-center">
+              <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${activeTab === 'holding' ? 'bg-blue-50' : 'bg-green-50'}`}>
+                <Ionicons name="book" size={24} color={activeTab === 'holding' ? '#2563eb' : '#10b981'} />
+              </View>
+              
               <View className="flex-1">
-                <Text className="font-bold text-slate-900 text-lg">
+                <Text className="font-bold text-slate-900 text-lg" numberOfLines={1}>
                   {item.book?.title || getBookTitle(item.bookId)}
                 </Text>
-                <Text className="text-slate-400 text-sm">ยืมเมื่อ: {new Date(item.borrowDate).toLocaleDateString()}</Text>
+                <View className="flex-row items-center mt-1">
+                  <Ionicons name="time-outline" size={12} color="#94a3b8" />
+                  <Text className="text-slate-400 text-[11px] font-bold ml-1 uppercase">
+                    {activeTab === 'holding' ? `ยืมเมื่อ ${new Date(item.borrowDate).toLocaleDateString()}` : `คืนเมื่อ ${new Date(item.returnDate).toLocaleString('th-TH')}`}
+                  </Text>
+                </View>
               </View>
-              <TouchableOpacity onPress={() => handleReturn(item)} className="bg-slate-900 p-3 rounded-2xl">
-                <Ionicons name="return-up-back" size={20} color="white" />
-              </TouchableOpacity>
+
+              {activeTab === 'holding' ? (
+                <TouchableOpacity 
+                  onPress={() => handleReturn(item)}
+                  className="bg-slate-900 px-4 py-2.5 rounded-xl"
+                >
+                  <Text className="text-white font-black text-[10px] uppercase">คืนหนังสือ</Text>
+                </TouchableOpacity>
+              ) : (
+                <View className="bg-green-100 p-2 rounded-full">
+                  <Ionicons name="checkmark" size={16} color="#10b981" />
+                </View>
+              )}
             </View>
-          )}
-          ListEmptyComponent={
-            <View className="items-center mt-20">
-              <Ionicons name="checkmark-done-circle-outline" size={80} color="#e2e8f0" />
-              <Text className="text-slate-400 mt-4 font-bold">ไม่มีหนังสือค้างคืน</Text>
+          </View>
+        )}
+        ListEmptyComponent={
+          !loading && (
+            <View className="items-center mt-10 p-10 bg-slate-50 rounded-[40px] border border-dashed border-slate-200">
+              <Ionicons name={activeTab === 'holding' ? "happy-outline" : "receipt-outline"} size={80} color="#cbd5e1" />
+              <Text className="text-slate-500 mt-4 font-bold text-lg">
+                {activeTab === 'holding' ? "ไม่มีหนังสือค้างคืน" : "ยังไม่มีประวัติการคืน"}
+              </Text>
             </View>
-          }
-        />
+          )
+        }
+      />
+      
+      {loading && (
+        <View className="absolute inset-0 bg-white/50 justify-center items-center">
+          <ActivityIndicator size="large" color="#3b82f6" />
+        </View>
       )}
     </View>
   );
