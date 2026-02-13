@@ -1,5 +1,5 @@
 import { t, Static } from "elysia";
-import { Role } from "@/provider/database/prismabox/Role";
+import { Role } from "@/provider/database/generated/enums";
 
 export const MemberSchema = t.Object({
     id: t.Number(),

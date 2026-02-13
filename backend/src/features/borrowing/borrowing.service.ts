@@ -10,7 +10,7 @@ export namespace BorrowingService {
   export async function getBorrowingById(id: number) {
     const borrowing = await BorrowingRepository.findById(id);
     if (!borrowing) throw new Error("Borrowing record not found");
-    return bor rowing;
+    return borrowing;
   }
 
   export async function borrowBook(data: BorrowingCreate) {
