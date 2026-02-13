@@ -1,114 +1,98 @@
-import React from 'react';
-import { View, Text, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-// --- ข้อมูลจำลอง ---
-const books = [
-  { book_id: 'B001', title: 'React Native Guide' },
-  { book_id: 'B002', title: 'TypeScript Mastery' },
-];
-
-const borrowings = [
-  { borrow_id: 1, book_id: 'B001', borrow_date: '2024-02-10', return_date: null },
-  { borrow_id: 2, book_id: 'B002', borrow_date: '2024-02-01', return_date: '2024-02-05' },
-];
+import { borrowingApi, bookApi } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function HistoryScreen() {
+  const [borrowings, setBorrowings] = useState<any[]>([]);
+  const [allBooks, setAllBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        console.log('HistoryScreen: Fetching data for user:', user.id);
+        
+        // Fetch both history and all books in parallel
+        const [historyRes, booksRes] = await Promise.all([
+          borrowingApi.getHistory(user.id),
+          bookApi.getAll()
+        ]);
+        
+        console.log('HistoryScreen: Loaded', historyRes.data.length, 'records');
+        setAllBooks(booksRes.data);
+        setBorrowings(historyRes.data);
+      } catch (e: any) {
+        console.error('HistoryScreen: Load error:', e.message);
+        const msg = 'ไม่สามารถโหลดประวัติได้';
+        Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+      } finally { 
+        setLoading(false); 
+      }
+    };
+    load();
+  }, [user?.id]);
+
+  // Helper function to get book info manually
+  const getBookInfo = (bookId: number) => {
+    const book = allBooks.find(b => b.id === bookId);
+    return book || null;
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
-      {/* ✨ Center Container: คุมความกว้างให้เป๊ะทั้งบนมือถือและเว็บ */}
-      <View className="mx-auto w-full max-w-[500px] flex-1 bg-white">
-        {/* 1. Header Section - แบบคลีนๆ */}
-        <View className="border-b border-gray-100 px-6 pb-6 pt-10">
-          <Text className="text-3xl font-black tracking-tight text-gray-900">ประวัติการใช้งาน</Text>
-          <Text className="mt-1 font-medium text-gray-500">ติดตามรายการยืม-คืนหนังสือทั้งหมด</Text>
+    <View className="flex-1 bg-white pt-12 px-6">
+      <View className="flex-row justify-between items-center mb-6">
+        <Text className="text-2xl font-black text-slate-900">ประวัติการใช้งาน</Text>
+        <View className="bg-blue-50 px-3 py-1 rounded-full">
+          <Text className="text-blue-600 font-bold text-xs">{borrowings.length} รายการ</Text>
         </View>
+      </View>
 
+      {loading ? <ActivityIndicator size="large" color="#3b82f6" className="mt-10" /> : (
         <FlatList
           data={borrowings}
-          keyExtractor={(item) => item.borrow_id.toString()}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="mt-20 items-center">
-              <Ionicons name="document-text-outline" size={64} color="#e2e8f0" />
-              <Text className="mt-4 text-lg font-bold text-gray-400">ยังไม่มีประวัติการใช้งาน</Text>
-            </View>
-          }
+          keyExtractor={item => item.id.toString()}
           renderItem={({ item }) => {
-            const book = books.find((b) => b.book_id === item.book_id);
-            const isReturned = !!item.return_date;
-
+            // Try to get book info from relation first, then fallback to manual lookup
+            const bookInfo = item.book || getBookInfo(item.bookId);
+            
             return (
-              /* 2. List Item แบบ Card ที่เราตกลงกันไว้ (นำตารางออก) */
-              <View
-                className={`mb-4 rounded-2xl border p-5 ${
-                  isReturned ? 'border-gray-100 bg-gray-50' : 'border-blue-100 bg-white shadow-sm'
-                }`}>
-                <View className="mb-3 flex-row items-start justify-between">
-                  <View className="flex-1 pr-2">
-                    <Text className="text-lg font-bold leading-tight text-gray-900">
-                      {book?.title || 'ไม่พบข้อมูลหนังสือ'}
-                    </Text>
-                    <Text className="mt-1 text-xs font-semibold text-gray-400">
-                      Transaction: #TR-{item.borrow_id}
-                    </Text>
-                  </View>
-
-                  {/* Status Badge */}
-                  <View
-                    className={`rounded-full px-3 py-1 ${
-                      isReturned ? 'bg-green-100' : 'bg-orange-100'
-                    }`}>
-                    <Text
-                      className={`text-[10px] font-black uppercase ${
-                        isReturned ? 'text-green-700' : 'text-orange-700'
-                      }`}>
-                      {isReturned ? 'คืนแล้ว' : 'ยังไม่คืน'}
-                    </Text>
-                  </View>
+              <View className="p-5 bg-slate-50 border border-slate-100 rounded-3xl mb-4">
+                <View className="flex-row justify-between mb-2">
+                  <Text className="font-bold text-slate-900 flex-1">
+                    {bookInfo?.title || `หนังสือ (ID: ${item.bookId})`}
+                  </Text>
+                  <Text className={`text-[10px] font-black uppercase ${item.returnDate ? 'text-green-600' : 'text-orange-600'}`}>
+                    {item.returnDate ? 'Returned' : 'In Progress'}
+                  </Text>
                 </View>
-
-                {/* 3. Detail Section: วันที่ยืม - วันที่คืน */}
-                <View className="mt-1 flex-row items-center justify-between border-t border-gray-100 pt-3">
+                <View className="flex-row justify-between items-end mt-2">
                   <View>
-                    <Text className="text-[10px] font-bold uppercase tracking-tighter text-gray-400">
-                      วันที่ยืม
-                    </Text>
-                    <View className="mt-1 flex-row items-center">
-                      <Ionicons name="calendar-outline" size={14} color="#64748b" />
-                      <Text className="ml-1 text-sm font-semibold text-gray-600">
-                        {item.borrow_date}
-                      </Text>
-                    </View>
+                    <Text className="text-[9px] text-slate-400 font-bold uppercase">Borrowed on</Text>
+                    <Text className="text-xs text-slate-600 font-medium">{new Date(item.borrowDate).toLocaleDateString()}</Text>
                   </View>
-
-                  <View className="items-end">
-                    <Text className="text-[10px] font-bold uppercase tracking-tighter text-gray-400">
-                      กำหนดคืน / วันที่คืน
-                    </Text>
-                    <View className="mt-1 flex-row items-center">
-                      <Ionicons
-                        name={isReturned ? 'checkmark-circle-outline' : 'time-outline'}
-                        size={14}
-                        color={isReturned ? '#16a34a' : '#2563eb'}
-                      />
-                      <Text
-                        className={`ml-1 text-sm font-bold ${
-                          isReturned ? 'text-gray-500' : 'text-blue-600'
-                        }`}>
-                        {item.return_date || 'รอการส่งคืน'}
-                      </Text>
+                  {item.returnDate && (
+                    <View className="items-end">
+                      <Text className="text-[9px] text-slate-400 font-bold uppercase">Returned on</Text>
+                      <Text className="text-xs text-slate-600 font-medium">{new Date(item.returnDate).toLocaleDateString()}</Text>
                     </View>
-                  </View>
+                  )}
                 </View>
               </View>
             );
           }}
+          ListEmptyComponent={
+            <View className="items-center mt-20">
+              <Ionicons name="receipt-outline" size={60} color="#e2e8f0" />
+              <Text className="text-slate-400 mt-4 font-bold">ไม่มีประวัติการยืมหนังสือ</Text>
+            </View>
+          }
         />
-      </View>
-    </SafeAreaView>
+      )}
+    </View>
   );
 }

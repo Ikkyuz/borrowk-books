@@ -16,6 +16,7 @@ export namespace MemberService {
         const existing = await MemberRepository.findByUsername(data.username);
         if (existing) throw new Error("Username already exists");
 
+        if (!data.password) throw new Error("Password is required");
         const hashedPassword = await Bun.password.hash(data.password);
         return await MemberRepository.create({
             ...data,

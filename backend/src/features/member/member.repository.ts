@@ -3,7 +3,14 @@ import { MemberCreate, MemberUpdate } from "./member.schema";
 
 export namespace MemberRepository {
     export async function findAll() {
-        return await prisma.member.findMany();
+        return await prisma.member.findMany({
+            select: {
+                id: true,
+                username: true,
+                fullName: true,
+                role: true,
+            }
+        });
     }
 
     export async function findById(id: number) {

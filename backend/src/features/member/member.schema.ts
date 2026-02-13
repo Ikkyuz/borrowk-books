@@ -9,6 +9,8 @@ export const MemberSchema = t.Object({
     role: t.Enum(Role),
 });
 
+export const MemberResponseSchema = t.Omit(MemberSchema, ["password"]);
+
 export const memberCreateSchema = t.Omit(MemberSchema, ["id"]);
 export const memberUpdateSchema = t.Partial(t.Omit(MemberSchema, ["id"]));
 export const memberLoginSchema = t.Pick(MemberSchema, ["username", "password"]);

@@ -1,116 +1,104 @@
-import React from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity } from 'react-native';
-// import { books } from '../../data/library';  <-- ลบบรรทัดนี้ทิ้งไปเลยครับ
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { bookApi } from '../services/api';
+import AdminHeader from './AdminHeader';
 
-// --- สร้างข้อมูลจำลองตรงนี้แทนครับ ---
-const books = [
-  { book_id: 'B001', title: 'React Native Guide', author: 'John Doe', status: 'borrowed' },
-  { book_id: 'B002', title: 'TypeScript Mastery', author: 'Jane Smith', status: 'available' },
-  { book_id: 'B003', title: 'Expo Router Basics', author: 'Bob Builder', status: 'available' },
-  { book_id: 'B004', title: 'Tailwind CSS Magic', author: 'Adam W.', status: 'available' },
-  { book_id: 'B005', title: 'Advanced JavaScript', author: 'Kyle Simpson', status: 'borrowed' },
-];
+export default function ManageBooksScreen() {
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-export default function BookListScreen() {
+  const loadBooks = async () => {
+    setLoading(true);
+    try {
+      const res = await bookApi.getAll();
+      setBooks(res.data);
+    } catch (e) {
+      const msg = 'ไม่สามารถโหลดข้อมูลหนังสือได้';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadBooks(); }, []);
+
+  const handleDelete = (id: number, title: string) => {
+    const confirmMsg = `ยืนยันการลบหนังสือ "${title}" หรือไม่?`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(confirmMsg)) performDelete(id);
+    } else {
+      Alert.alert('ยืนยันการลบ', confirmMsg, [
+        { text: 'ยกเลิก' },
+        { text: 'ลบ', style: 'destructive', onPress: () => performDelete(id) }
+      ]);
+    }
+  };
+
+  const performDelete = async (id: number) => {
+    try {
+      await bookApi.delete(id);
+      Platform.OS === 'web' ? window.alert('ลบเรียบร้อย') : Alert.alert('สำเร็จ', 'ลบหนังสือแล้ว');
+      loadBooks();
+    } catch (e) {
+      Platform.OS === 'web' ? window.alert('ลบไม่สำเร็จ') : Alert.alert('Error', 'ไม่สามารถลบได้');
+    }
+  };
+
+  const filtered = books.filter(b => 
+    b.title.toLowerCase().includes(search.toLowerCase()) || 
+    b.author?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Main Content */}
-      <View className="mx-auto w-full max-w-7xl flex-1 px-4 pb-12 pt-12 sm:px-6 lg:px-8">
-        {/* Title Section */}
-        <View className="mb-8 px-2">
-          <Text className="text-3xl font-black tracking-tighter text-gray-900">หนังสือทั้งหมด</Text>
-          <View className="mt-2 h-1.5 w-16 rounded-full bg-blue-600" />
+    <View className="flex-1 bg-slate-50">
+      <AdminHeader title="จัดการหนังสือ" subtitle="Book Inventory" iconName="library-outline" />
+      
+      <View className="flex-1 px-6 -mt-8">
+        <View className="flex-row items-center bg-white px-4 py-3 rounded-2xl mb-6 shadow-sm border border-slate-100">
+          <Ionicons name="search" size={20} color="#94a3b8" />
+          <TextInput 
+            className="flex-1 ml-3 text-slate-700 font-medium"
+            placeholder="ค้นหาหนังสือ..."
+            value={search}
+            onChangeText={setSearch}
+          />
+          <TouchableOpacity onPress={loadBooks}>
+            <Ionicons name="refresh" size={20} color="#3b82f6" />
+          </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
-        <View className="mb-8 px-2">
-          <View className="h-12 flex-row items-center rounded-2xl border border-gray-100 bg-white px-4 shadow-sm">
-            <Ionicons name="search" size={20} color="#64748b" />
-            <TextInput
-              className="h-full flex-1 px-4 text-base text-gray-800"
-              placeholder="ค้นหาชื่อหนังสือ หรือผู้แต่ง..."
-              placeholderTextColor="#94a3b8"
-            />
-          </View>
-        </View>
-
-        {/* Table Container */}
-        <View className="flex-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg">
-          {/* Header Row */}
-          <View className="flex-row items-center border-b border-gray-200 bg-gray-50 px-6 py-4">
-            <View className="flex-[4]">
-              <Text className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                ข้อมูลหนังสือ
-              </Text>
-            </View>
-            <View className="flex-[3]">
-              <Text className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                ผู้แต่ง
-              </Text>
-            </View>
-            <View className="flex-[3]">
-              <Text className="text-center text-xs font-bold uppercase tracking-widest text-gray-400">
-                สถานะ
-              </Text>
-            </View>
-            <View className="flex-[2]">
-              <Text className="text-right text-xs font-bold uppercase tracking-widest text-gray-400">
-                จัดการ
-              </Text>
-            </View>
-          </View>
-
-          {/* Data Rows */}
+        {loading ? <ActivityIndicator size="large" color="#3b82f6" /> : (
           <FlatList
-            data={books}
-            keyExtractor={(item) => item.book_id}
+            data={filtered}
+            keyExtractor={item => item.id.toString()}
             renderItem={({ item }) => (
-              <View className="flex-row items-center border-b border-gray-100 px-6 py-4 hover:bg-gray-50">
-                {/* Flex 4: Title & ID */}
-                <View className="flex-[4] pr-2">
-                  <Text
-                    className="text-base font-bold leading-tight text-gray-900"
-                    numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text className="mt-1 text-xs font-medium text-gray-400">#{item.book_id}</Text>
-                </View>
-
-                {/* Flex 3: Author */}
-                <View className="flex-[3] pr-2">
-                  <Text className="text-sm font-medium text-gray-600" numberOfLines={1}>
-                    {item.author}
-                  </Text>
-                </View>
-
-                {/* Flex 3: Status */}
-                <View className="flex-[3] items-center">
-                  <View
-                    className={`rounded-full px-3 py-1 ${
-                      item.status === 'available' ? 'bg-green-100' : 'bg-orange-100'
-                    }`}>
-                    <Text
-                      className={`text-[10px] font-black uppercase tracking-widest ${
-                        item.status === 'available' ? 'text-green-700' : 'text-orange-700'
-                      }`}>
-                      {item.status === 'available' ? 'ว่าง' : 'ถูกยืม'}
-                    </Text>
+              <View className="bg-white p-5 rounded-3xl mb-4 border border-slate-100 shadow-sm flex-row items-center">
+                <View className="flex-1">
+                  <Text className="text-lg font-bold text-slate-900">{item.title}</Text>
+                  <Text className="text-slate-400 text-sm">{item.author || 'ไม่ระบุผู้แต่ง'}</Text>
+                  <View className="mt-2 flex-row">
+                    <View className={`px-2 py-0.5 rounded-lg ${item.status === 'available' ? 'bg-green-50' : 'bg-orange-50'}`}>
+                      <Text className={`text-[10px] font-bold uppercase ${item.status === 'available' ? 'text-green-600' : 'text-orange-600'}`}>
+                        {item.status}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-
-                {/* Flex 2: Action */}
-                <View className="flex-[2] items-end">
-                  <TouchableOpacity className="rounded-lg bg-blue-600 px-4 py-2 shadow-sm active:bg-blue-700">
-                    <Text className="text-xs font-bold text-white">ยืม</Text>
+                <View className="flex-row">
+                  <TouchableOpacity 
+                    onPress={() => handleDelete(item.id, item.title)}
+                    className="p-2 bg-red-50 rounded-xl ml-2"
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
               </View>
             )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={<Text className="text-center text-slate-400 mt-10">ไม่พบหนังสือ</Text>}
           />
-        </View>
+        )}
       </View>
     </View>
   );

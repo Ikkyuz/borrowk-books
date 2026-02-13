@@ -1,88 +1,131 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { books } from '../../data/library';
+import { bookApi, borrowingApi } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function BorrowScreen() {
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [bookCode, setBookCode] = useState('');
+  const { user } = useAuth();
 
-  // กรองเฉพาะหนังสือที่มีสถานะเป็น 'available' (ว่าง)
-  const availableBooks = books.filter((book) => book.status === 'available');
+  const fetchAvailable = async () => {
+    setLoading(true);
+    try {
+      const res = await bookApi.getAvailable();
+      setBooks(res.data);
+    } catch (e) {
+      Alert.alert('Error', 'โหลดข้อมูลหนังสือไม่สำเร็จ');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleBorrow = (code?: string) => {
-    const targetCode = code || bookCode;
-    if (!targetCode.trim()) {
-      Alert.alert('ข้อผิดพลาด', 'กรุณาระบุรหัสหนังสือ');
+  useEffect(() => { fetchAvailable(); }, []);
+
+  const handleBorrow = async (id?: number) => {
+    console.log('Attempting to borrow book with ID:', id || bookCode);
+    const targetId = id || Number(bookCode);
+    
+    if (!targetId || isNaN(targetId)) {
+      const msg = 'กรุณาระบุรหัสหนังสือที่ถูกต้อง';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
       return;
     }
-    Alert.alert('สำเร็จ', `ทำรายการยืมหนังสือรหัส ${targetCode} เรียบร้อยแล้ว`);
-    setBookCode('');
+
+    try {
+      if (!user?.id) {
+        const msg = 'ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่';
+        Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+        return;
+      }
+      
+      console.log('Sending borrow request:', { memberId: user.id, bookId: targetId });
+      const response = await borrowingApi.borrow({ memberId: user.id, bookId: targetId });
+      console.log('Borrow response:', response.data);
+      
+      const successMsg = 'ทำรายการยืมเรียบร้อย';
+      Platform.OS === 'web' ? window.alert(successMsg) : Alert.alert('สำเร็จ', successMsg);
+      
+      setBookCode('');
+      fetchAvailable();
+    } catch (error: any) {
+      console.error('Borrow error details:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.error || 'การยืมล้มเหลว';
+      Platform.OS === 'web' ? window.alert(errorMsg) : Alert.alert('Error', errorMsg);
+    }
   };
 
   const renderHeader = () => (
     <View className="mb-6">
-      <Text className="mb-2 text-3xl font-bold text-gray-800">ทำรายการยืม</Text>
-      <Text className="mb-6 text-gray-500">เลือกหนังสือที่ต้องการ หรือระบุรหัส</Text>
+      <Text className="text-3xl font-black text-slate-900 mb-2">ยืมหนังสือ</Text>
+      <Text className="text-slate-400 mb-8">กรอกรหัสหรือเลือกหนังสือที่ว่าง</Text>
 
-      {/* ส่วนกรอกรหัสด่วน */}
-      <View className="mb-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-        <View className="flex-row items-center rounded-2xl border border-gray-100 bg-gray-50 p-3">
-          <Ionicons name="qr-code-outline" size={20} color="#64748b" style={{ marginRight: 8 }} />
+      <View className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-8">
+        <View className="flex-row items-center bg-slate-50 rounded-2xl px-4 py-1">
+          <Ionicons name="qr-code-outline" size={20} color="#64748b" />
           <TextInput
-            className="flex-1 p-1 text-gray-800"
-            placeholder="กรอกรหัสหนังสือ..."
+            className="flex-1 p-3 text-slate-800 font-bold"
+            placeholder="ใส่ ID หนังสือ..."
+            keyboardType="numeric"
             value={bookCode}
             onChangeText={setBookCode}
           />
           <TouchableOpacity
             onPress={() => handleBorrow()}
-            className="rounded-xl bg-blue-600 px-4 py-2">
-            <Text className="font-bold text-white">ยืม</Text>
+            className="bg-blue-600 px-6 py-2 rounded-xl">
+            <Text className="text-white font-bold">ยืม</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-bold text-gray-800">หนังสือที่ว่างอยู่</Text>
-        <View className="rounded-full bg-green-100 px-3 py-1">
-          <Text className="text-xs font-bold text-green-700">{availableBooks.length} เล่ม</Text>
-        </View>
+      <View className="flex-row justify-between items-center mb-4">
+        <Text className="text-xl font-bold text-slate-800">รายการที่ว่างอยู่</Text>
+        <Text className="text-blue-600 font-black text-xs uppercase bg-blue-50 px-3 py-1 rounded-full">
+          {books.length} Available
+        </Text>
       </View>
     </View>
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <FlatList
-        data={availableBooks}
-        keyExtractor={(item) => item.book_id}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
-        renderItem={({ item }) => (
-          <View className="mb-4 flex-row items-center rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
-            <View className="mr-4 h-12 w-12 items-center justify-center rounded-2xl bg-green-50">
-              <Ionicons name="book" size={24} color="#16a34a" />
+    <View className="flex-1 bg-white">
+      {loading ? (
+        <ActivityIndicator size="large" color="#3b82f6" className="mt-20" />
+      ) : (
+        <FlatList
+          data={books}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+          style={{ flex: 1 }}
+          renderItem={({ item }) => (
+            <View className="mb-4 flex-row items-center p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+              <View className="w-12 h-12 bg-green-50 rounded-2xl items-center justify-center mr-4">
+                <Ionicons name="book" size={24} color="#16a34a" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-bold text-slate-900">{item.title}</Text>
+                <Text className="text-slate-400 text-xs">ID: #{item.id}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('Button Pressed!');
+                  handleBorrow(item.id);
+                }}
+                activeOpacity={0.5}
+                style={{ zIndex: 100 }}
+                className="bg-blue-600 px-5 py-2.5 rounded-xl shadow-sm border border-blue-700">
+                <Text className="text-white font-bold text-xs pointer-events-none">ยืมเล่มนี้</Text>
+              </TouchableOpacity>
             </View>
-            <View className="flex-1">
-              <Text className="text-lg font-bold text-gray-800">{item.title}</Text>
-              <Text className="text-sm text-gray-500">
-                รหัส: {item.book_id} • {item.author}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => handleBorrow(item.book_id)}
-              className="rounded-xl bg-green-600 px-4 py-2">
-              <Text className="font-bold text-white">เลือก</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        ListEmptyComponent={
-          <View className="mt-10 items-center">
-            <Ionicons name="alert-circle-outline" size={48} color="#9ca3af" />
-            <Text className="mt-2 text-gray-400">ขออภัย ไม่พบหนังสือว่างในขณะนี้</Text>
-          </View>
-        }
-      />
+          )}
+          ListEmptyComponent={
+            <Text className="text-center text-slate-400 mt-10">ไม่พบหนังสือว่างในขณะนี้</Text>
+          }
+        />
+      )}
     </View>
   );
 }

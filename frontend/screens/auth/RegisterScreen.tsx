@@ -12,27 +12,34 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { memberApi } from '../../services/api';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    // Handling Errors: ตรวจสอบข้อมูลว่าง
-    if (!name.trim() || !email.trim() || !password.trim()) {
+  const handleRegister = async () => {
+    if (!fullName.trim() || !username.trim() || !password.trim()) {
       Alert.alert('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบทุกช่อง');
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('ข้อผิดพลาด', 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
-      return;
+    try {
+      await memberApi.register({
+        fullName,
+        username,
+        password,
+        role: 'user', // Default role for new members
+      });
+      
+      Alert.alert('สำเร็จ', 'สมัครสมาชิกเรียบร้อยแล้ว', [
+        { text: 'ไปหน้าเข้าสู่ระบบ', onPress: () => router.push('/auth/login') },
+      ]);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || 'ไม่สามารถสมัครสมาชิกได้';
+      Alert.alert('เกิดข้อผิดพลาด', errorMsg);
     }
-
-    Alert.alert('สำเร็จ', 'สมัครสมาชิกเรียบร้อยแล้ว', [
-      { text: 'ตกลง', onPress: () => router.back() },
-    ]);
   };
 
   return (
@@ -59,19 +66,18 @@ export default function RegisterScreen() {
               <TextInput
                 className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-gray-800"
                 placeholder="สมชาย ใจดี"
-                value={name}
-                onChangeText={setName}
+                value={fullName}
+                onChangeText={setFullName}
               />
             </View>
 
             <View>
-              <Text className="mb-2 ml-1 font-medium text-gray-700">อีเมล</Text>
+              <Text className="mb-2 ml-1 font-medium text-gray-700">Username</Text>
               <TextInput
                 className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-gray-800"
-                placeholder="example@email.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="user01"
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
               />
             </View>

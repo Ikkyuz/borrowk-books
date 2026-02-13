@@ -1,32 +1,38 @@
 import { Elysia, t } from "elysia";
 import { MemberService } from "./member.service";
-import { memberCreateSchema, memberUpdateSchema, memberLoginSchema, MemberSchema } from "./member.schema";
-import { authMiddleware } from "@/shared/middleware/auth";
+import { memberCreateSchema, memberUpdateSchema, memberLoginSchema, MemberSchema, MemberResponseSchema } from "./member.schema";
+import { verifyAdmin, verifyUser } from "@/shared/middleware/auth";
 
 export namespace MemberController {
     export const routes = new Elysia({ prefix: "/members" })
-        .get("/", async ({ isAdmin }) => {
-            await isAdmin();
+        .get("/", async ({ jwt, request: { headers } }) => {
+            await verifyAdmin(jwt, headers);
             return MemberService.getMembers();
         }, {
-            response: t.Array(MemberSchema),
+            response: t.Array(MemberResponseSchema),
             detail: { tags: ["Member"] }
         })
-        .get("/:id", async ({ params: { id }, isUser }) => {
-            await isUser(Number(id));
+        .get("/:id", async ({ params: { id }, jwt, request: { headers } }) => {
+            await verifyUser(jwt, headers, Number(id));
             return MemberService.getMemberById(Number(id));
         }, {
             params: t.Object({ id: t.String() }),
             response: MemberSchema,
             detail: { tags: ["Member"] }
         })
-        .post("/", ({ body }) => MemberService.createMember(body), {
+        .post("/", async ({ body, set }) => {
+            try {
+                return await MemberService.createMember(body);
+            } catch (e: any) {
+                set.status = 400;
+                return { error: e.message };
+            }
+        }, {
             body: memberCreateSchema,
-            response: MemberSchema,
             detail: { tags: ["Member"] }
         })
-        .put("/:id", async ({ params: { id }, body, isUser }) => {
-            await isUser(Number(id));
+        .put("/:id", async ({ params: { id }, body, jwt, request: { headers } }) => {
+            await verifyUser(jwt, headers, Number(id));
             return MemberService.updateMember(Number(id), body);
         }, {
             params: t.Object({ id: t.String() }),
@@ -34,8 +40,8 @@ export namespace MemberController {
             response: MemberSchema,
             detail: { tags: ["Member"] }
         })
-        .delete("/:id", async ({ params: { id }, isAdmin }) => {
-            await isAdmin();
+        .delete("/:id", async ({ params: { id }, jwt, request: { headers } }) => {
+            await verifyAdmin(jwt, headers);
             return MemberService.deleteMember(Number(id));
         }, {
             params: t.Object({ id: t.String() }),

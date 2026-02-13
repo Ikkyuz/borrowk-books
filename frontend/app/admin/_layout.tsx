@@ -39,6 +39,14 @@ export default function AdminLayout() {
         }}
       />
       <Drawer.Screen
+        name="manage-books"
+        options={{
+          title: 'คลังหนังสือ',
+          drawerLabel: 'จัดการหนังสือ',
+          drawerIcon: ({ color }) => <Ionicons name="list-outline" size={22} color={color} />,
+        }}
+      />
+      <Drawer.Screen
         name="add-book"
         options={{
           title: 'เพิ่มหนังสือใหม่',
