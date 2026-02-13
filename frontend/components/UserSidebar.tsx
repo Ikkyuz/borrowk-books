@@ -1,49 +1,63 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 export default function UserSidebar(props: any) {
   return (
-    <View className="flex-1 bg-white">
-      <DrawerContentScrollView 
-        {...props} 
-        contentContainerStyle={{ paddingTop: 0 }}
-      >
-        {/* Header section - Professional Blue - Full Width */}
-        <View className="p-6 bg-blue-600 pb-10">
-          <View className={`${Platform.OS === 'ios' ? 'mt-10' : 'mt-6'}`}>
-            <View className="w-12 h-12 bg-white/20 rounded-xl items-center justify-center mb-4">
-              <Ionicons name="person" size={24} color="white" />
-            </View>
-            <Text className="text-white text-lg font-bold tracking-tight">สวัสดี, ผู้ใช้งาน</Text>
-            <Text className="text-blue-100 text-xs mt-0.5 font-medium">สมาชิกห้องสมุดอัจฉริยะ</Text>
-          </View>
-        </View>
-        
-        {/* Menu Section */}
-        <View className="flex-1 px-2">
-          <DrawerItemList {...props} />
-        </View>
-      </DrawerContentScrollView>
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 bg-white">
+        <DrawerContentScrollView
+          {...props}
+          contentContainerStyle={{ paddingTop: 0 }}
+          showsVerticalScrollIndicator={false}>
+          {/* 1. Header Section - ลดขนาด padding และความสูงลง */}
+          <View className="rounded-br-[35px] bg-blue-600 px-5 pb-7 pt-10">
+            <View className={`flex-row items-center ${Platform.OS === 'ios' ? 'mt-4' : 'mt-2'}`}>
+              {/* Profile Avatar - ปรับขนาดให้เล็กลงกะทัดรัดขึ้น */}
+              <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-white/20">
+                <Ionicons name="person" size={24} color="white" />
+              </View>
 
-      {/* Bottom Section - Anchored */}
-      <View className="p-4 border-t border-gray-100 bg-white">
-        <TouchableOpacity 
-          onPress={() => router.replace('/')}
-          activeOpacity={0.7}
-          className="flex-row items-center bg-gray-50 p-4 rounded-2xl border border-gray-100"
-        >
-          <View className="w-9 h-9 bg-blue-100 rounded-xl items-center justify-center mr-3">
-            <Ionicons name="log-out-outline" size={20} color="#2563eb" />
+              {/* Text Group */}
+              <View className="flex-1">
+                <Text className="text-lg font-black tracking-tight text-white" numberOfLines={1}>
+                  สวัสดี, ผู้ใช้งาน
+                </Text>
+                <View className="mt-0.5 flex-row items-center">
+                  <View className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-400" />
+                  <Text className="text-[11px] font-medium text-blue-100">
+                    สมาชิกห้องสมุดอัจฉริยะ
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-          <Text className="text-blue-600 font-bold text-base">ออกจากระบบ</Text>
-        </TouchableOpacity>
-        <Text className="text-gray-400 text-[10px] text-center mt-4 font-medium uppercase tracking-widest">
-          Smart Library • v1.0.0
-        </Text>
+
+          {/* 2. Menu Section */}
+          <View className="mt-6 px-3">
+            <Text className="mb-3 ml-4 text-[9px] font-black uppercase tracking-[2px] text-gray-400">
+              เมนูหลัก
+            </Text>
+            <DrawerItemList {...props} />
+          </View>
+        </DrawerContentScrollView>
+
+        {/* 3. Bottom Section */}
+        <View className="px-5 pb-6">
+          <TouchableOpacity
+            onPress={() => router.replace('/')}
+            activeOpacity={0.8}
+            className="flex-row items-center rounded-2xl border border-gray-100 bg-gray-50 p-3.5 shadow-sm">
+            <View className="mr-3 h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+              <Ionicons name="log-out" size={18} color="#2563eb" />
+            </View>
+            <Text className="text-sm font-bold text-blue-600">ออกจากระบบ</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,98 +1,117 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StatusBar, TextInput } from 'react-native';
 import { members } from '../../data/library';
-import MemberCard from '../../components/MemberCard';
 import { Ionicons } from '@expo/vector-icons';
+import AdminHeader from '../../components/AdminHeader';
 
 export default function AdminMembersScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMembers = members.filter(
+    (member) =>
+      member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-slate-900 pt-12 pb-6 px-6 rounded-b-[30px]">
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text className="text-white text-3xl font-bold">สมาชิก</Text>
-            <Text className="text-slate-400 mt-1">จัดการข้อมูลสมาชิกทั้งหมด</Text>
-          </View>
-          <TouchableOpacity className="bg-blue-600 p-3 rounded-2xl">
-            <Ionicons name="person-add" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
 
-      <View className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10">
-        <View className="mb-10 px-2 flex-row justify-between items-end">
-          <View>
-            <Text className="text-4xl font-black text-slate-900 tracking-tighter">สมาชิก</Text>
-            <View className="h-1.5 w-12 bg-blue-600 mt-2 rounded-full" />
-          </View>
-          <TouchableOpacity className="bg-blue-600 px-6 py-3 rounded-2xl shadow-lg flex-row items-center">
-            <Ionicons name="person-add" size={20} color="white" />
-            <Text className="text-white font-bold ml-2">เพิ่มสมาชิก</Text>
+      <AdminHeader
+        title="จัดการสมาชิก"
+        subtitle="Manage Members"
+        variant="dark"
+        rightElement={
+          <TouchableOpacity
+            activeOpacity={0.8}
+            className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-500/40">
+            <Ionicons name="person-add" size={22} color="white" />
           </TouchableOpacity>
-        </View>
+        }
+      />
 
-        {/* Table Container */}
-        <View className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-100">
-          {/* Table Header Row */}
-          <View className="flex-row items-center px-6 py-4 bg-slate-50 border-b border-slate-200">
-            <View className="flex-[4] pr-4">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">ข้อมูลสมาชิก</Text>
+      {/* Main Content */}
+      <View className="-mt-8 flex-1 px-4 pt-4">
+        <View className="mx-auto w-full max-w-5xl flex-1">
+          {/* Action Row - Outside Header */}
+          <View className="mb-6 flex-row items-center">
+            <View className="mr-3 flex-1 flex-row items-center rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+              <Ionicons name="search" size={20} color="#94a3b8" />
+              <TextInput
+                className="ml-3 flex-1 text-base text-slate-800"
+                placeholder="ค้นหาชื่อ หรือชื่อผู้ใช้..."
+                placeholderTextColor="#94a3b8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </View>
-            <View className="flex-[3] px-2">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Username</Text>
-            </View>
-            <View className="flex-[3] px-2 items-center">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">บทบาท</Text>
-            </View>
-            <View className="flex-[2] items-end">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">จัดการ</Text>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              className="h-[52px] w-[52px] items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-500/40">
+              <Ionicons name="person-add" size={22} color="white" />
+            </TouchableOpacity>
           </View>
 
           <FlatList
-            data={members}
+            data={filteredMembers}
             keyExtractor={(item) => item.member_id.toString()}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
             renderItem={({ item }) => (
-              <View className="flex-row items-center px-6 py-5 border-b border-slate-100">
-                {/* Col-span-4: Name & ID */}
-                <View className="flex-[4] flex-row items-center pr-4">
-                  <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mr-3">
-                    <Text className="text-blue-600 font-bold">{item.full_name.charAt(0)}</Text>
-                  </View>
-                  <View>
-                    <Text className="text-sm font-bold text-slate-900 leading-snug">{item.full_name}</Text>
-                    <Text className="text-xs text-slate-500 mt-0.5 font-medium">#ID-{item.member_id}</Text>
-                  </View>
+              <View className="mb-4 flex-row items-center rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
+                {/* Profile Avatar */}
+                <View className="mr-4 h-16 w-16 items-center justify-center rounded-[22px] border border-blue-100/50 bg-blue-50">
+                  <Text className="text-2xl font-bold text-blue-600">
+                    {item.full_name.charAt(0).toUpperCase()}
+                  </Text>
                 </View>
 
-                {/* Col-span-3: Username */}
-                <View className="flex-[3] px-2">
-                  <Text className="text-sm text-slate-600 font-medium">{item.username}</Text>
-                </View>
-
-                {/* Col-span-3: Role */}
-                <View className="flex-[3] items-center">
-                  <View className={`px-4 py-1 rounded-full ${
-                    item.role === 'admin' ? 'bg-purple-100' : 'bg-slate-100'
-                  }`}>
-                    <Text className={`text-[10px] font-black uppercase tracking-widest ${
-                      item.role === 'admin' ? 'text-purple-700' : 'text-slate-700'
-                    }`}>
-                      {item.role}
+                {/* Member Info */}
+                <View className="flex-1">
+                  <View className="mb-1 flex-row items-center">
+                    <Text className="mr-2 text-lg font-bold text-slate-800" numberOfLines={1}>
+                      {item.full_name}
+                    </Text>
+                    {item.role === 'admin' && (
+                      <View className="rounded-md bg-purple-100 px-2 py-0.5">
+                        <Text className="text-[10px] font-bold uppercase tracking-tighter text-purple-700">
+                          Admin
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className="flex-row items-center">
+                    <Text className="text-sm font-medium text-slate-400">@{item.username}</Text>
+                    <View className="mx-2 h-1 w-1 rounded-full bg-slate-200" />
+                    <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                      ID: {item.member_id.toString().padStart(3, '0')}
                     </Text>
                   </View>
                 </View>
 
-                {/* Col-span-2: Action */}
-                <TouchableOpacity className="flex-[2] items-end">
-                  <View className="bg-slate-900 px-4 py-2 rounded-xl">
-                    <Text className="text-white text-xs font-bold">แก้ไข</Text>
-                  </View>
+                {/* Action Button */}
+                <TouchableOpacity
+                  className="h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 active:bg-slate-100"
+                  activeOpacity={0.6}>
+                  <Ionicons name="settings-outline" size={20} color="#64748b" />
                 </TouchableOpacity>
               </View>
             )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={
+              <View className="mt-20 items-center p-10">
+                <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-slate-100">
+                  <Ionicons name="people-outline" size={48} color="#cbd5e1" />
+                </View>
+                <Text className="text-center text-xl font-bold text-slate-500">
+                  {searchQuery ? 'ไม่พบสมาชิกที่ค้นหา' : 'ยังไม่มีข้อมูลสมาชิก'}
+                </Text>
+                <Text className="mt-2 text-center text-sm leading-5 text-slate-400">
+                  {searchQuery
+                    ? 'ลองใช้คำค้นหาอื่นในการค้นหาอีกครั้ง'
+                    : 'สมาชิกที่ลงทะเบียนจะแสดงรายการที่นี่'}
+                </Text>
+              </View>
+            }
           />
         </View>
       </View>

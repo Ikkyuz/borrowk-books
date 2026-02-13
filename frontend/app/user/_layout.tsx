@@ -13,7 +13,7 @@ export default function UserLayout() {
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
-          fontWeight: 'bold', 
+          fontWeight: 'bold',
         },
         drawerActiveBackgroundColor: '#eff6ff',
         drawerActiveTintColor: '#2563eb',
@@ -36,16 +36,13 @@ export default function UserLayout() {
           fontSize: 15,
           fontWeight: '600',
         },
-      }}
-    >
+      }}>
       <Drawer.Screen
         name="books"
         options={{
           title: 'รายการหนังสือ',
           drawerLabel: 'หน้าหลัก',
-          drawerIcon: ({ color }) => (
-            <Ionicons name="home-outline" size={22} color={color} />
-          ),
+          drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
         }}
       />
       <Drawer.Screen
@@ -53,9 +50,7 @@ export default function UserLayout() {
         options={{
           title: 'ทำรายการยืม',
           drawerLabel: 'ยืมหนังสือ',
-          drawerIcon: ({ color }) => (
-            <Ionicons name="add-circle-outline" size={22} color={color} />
-          ),
+          drawerIcon: ({ color }) => <Ionicons name="add-circle-outline" size={22} color={color} />,
         }}
       />
       <Drawer.Screen
@@ -73,9 +68,7 @@ export default function UserLayout() {
         options={{
           title: 'ประวัติการใช้งาน',
           drawerLabel: 'ประวัติ',
-          drawerIcon: ({ color }) => (
-            <Ionicons name="time-outline" size={22} color={color} />
-          ),
+          drawerIcon: ({ color }) => <Ionicons name="time-outline" size={22} color={color} />,
         }}
       />
     </Drawer>
