@@ -1,108 +1,114 @@
 import React from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, SafeAreaView, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-// --- ข้อมูลจำลอง (Mock Data) ---
+// --- ข้อมูลจำลอง ---
 const books = [
   { book_id: 'B001', title: 'React Native Guide' },
   { book_id: 'B002', title: 'TypeScript Mastery' },
 ];
 
 const borrowings = [
-  { borrow_id: 1, book_id: 'B001', borrow_date: '2024-02-10', return_date: null }, // ยังไม่คืน
-  { borrow_id: 2, book_id: 'B002', borrow_date: '2024-02-01', return_date: '2024-02-05' }, // คืนแล้ว
+  { borrow_id: 1, book_id: 'B001', borrow_date: '2024-02-10', return_date: null },
+  { borrow_id: 2, book_id: 'B002', borrow_date: '2024-02-01', return_date: '2024-02-05' },
 ];
 
 export default function HistoryScreen() {
   return (
-    <View className="flex-1 bg-gray-50">
-      
-      {/* Main Container */}
-      <View className="mx-auto w-full max-w-7xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
-        
-        {/* Header Section */}
-        <View className="mb-10">
-          <Text className="text-4xl font-black tracking-tighter text-gray-900">ประวัติการใช้งาน</Text>
-          <View className="mt-2 h-1.5 w-20 rounded-full bg-blue-600" />
-          <Text className="mt-4 text-lg text-gray-500">ติดตามรายการยืม-คืนหนังสือทั้งหมดของคุณ</Text>
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+      {/* ✨ Center Container: คุมความกว้างให้เป๊ะทั้งบนมือถือและเว็บ */}
+      <View className="mx-auto w-full max-w-[500px] flex-1 bg-white">
+        {/* 1. Header Section - แบบคลีนๆ */}
+        <View className="border-b border-gray-100 px-6 pb-6 pt-10">
+          <Text className="text-3xl font-black tracking-tight text-gray-900">ประวัติการใช้งาน</Text>
+          <Text className="mt-1 font-medium text-gray-500">ติดตามรายการยืม-คืนหนังสือทั้งหมด</Text>
         </View>
 
-        {/* Table Container */}
-        <View className="w-full flex-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg">
-          
-          {/* --- Table Header (ใช้ flex-row) --- */}
-          <View className="w-full flex-row items-center border-b border-gray-200 bg-gray-50 px-6 py-4">
-            <View className="flex-[4]">
-              <Text className="text-left text-xs font-bold uppercase tracking-widest text-gray-400">หนังสือ / รายการ</Text>
+        <FlatList
+          data={borrowings}
+          keyExtractor={(item) => item.borrow_id.toString()}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View className="mt-20 items-center">
+              <Ionicons name="document-text-outline" size={64} color="#e2e8f0" />
+              <Text className="mt-4 text-lg font-bold text-gray-400">ยังไม่มีประวัติการใช้งาน</Text>
             </View>
-            <View className="flex-[3]">
-              <Text className="text-left text-xs font-bold uppercase tracking-widest text-gray-400">วันที่ยืม</Text>
-            </View>
-            <View className="flex-[3]">
-              <Text className="text-center text-xs font-bold uppercase tracking-widest text-gray-400">สถานะ</Text>
-            </View>
-            <View className="flex-[2]">
-              <Text className="text-right text-xs font-bold uppercase tracking-widest text-gray-400">คืนวันที่</Text>
-            </View>
-          </View>
+          }
+          renderItem={({ item }) => {
+            const book = books.find((b) => b.book_id === item.book_id);
+            const isReturned = !!item.return_date;
 
-          {/* --- Table List --- */}
-          <FlatList
-            data={borrowings}
-            keyExtractor={(item) => item.borrow_id.toString()}
-            renderItem={({ item }) => {
-              const book = books.find(b => b.book_id === item.book_id);
-              const isReturned = !!item.return_date; // เช็คว่าคืนหรือยัง (ถ้ามีวันที่คืน = คืนแล้ว)
-
-              return (
-                // ใช้ flex-row และ w-full เพื่อให้เรียงแนวนอนเต็มความกว้าง
-                <View className="w-full flex-row items-center border-b border-gray-100 px-6 py-5 hover:bg-gray-50">
-                  
-                  {/* 1. ชื่อหนังสือ & รหัส (4 ส่วน) */}
-                  <View className="flex-[4] pr-4">
-                    <Text className="text-sm font-bold leading-snug text-gray-900" numberOfLines={1}>
-                      {book?.title || 'ไม่พบข้อมูล'}
+            return (
+              /* 2. List Item แบบ Card ที่เราตกลงกันไว้ (นำตารางออก) */
+              <View
+                className={`mb-4 rounded-2xl border p-5 ${
+                  isReturned ? 'border-gray-100 bg-gray-50' : 'border-blue-100 bg-white shadow-sm'
+                }`}>
+                <View className="mb-3 flex-row items-start justify-between">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-lg font-bold leading-tight text-gray-900">
+                      {book?.title || 'ไม่พบข้อมูลหนังสือ'}
                     </Text>
-                    <Text className="mt-0.5 text-xs font-medium text-gray-500">#TR-{item.borrow_id}</Text>
+                    <Text className="mt-1 text-xs font-semibold text-gray-400">
+                      Transaction: #TR-{item.borrow_id}
+                    </Text>
                   </View>
 
-                  {/* 2. วันที่ยืม (3 ส่วน) */}
-                  <View className="flex-[3] pr-2">
-                    <Text className="text-sm font-medium text-gray-600">{item.borrow_date}</Text>
-                  </View>
-
-                  {/* 3. สถานะ (3 ส่วน - จัดกลาง) */}
-                  <View className="flex-[3] items-center justify-center">
-                    <View className={`rounded-full px-3 py-1 ${
+                  {/* Status Badge */}
+                  <View
+                    className={`rounded-full px-3 py-1 ${
                       isReturned ? 'bg-green-100' : 'bg-orange-100'
                     }`}>
-                      <Text className={`text-[10px] font-black uppercase tracking-widest ${
+                    <Text
+                      className={`text-[10px] font-black uppercase ${
                         isReturned ? 'text-green-700' : 'text-orange-700'
                       }`}>
-                        {isReturned ? 'คืนแล้ว' : 'ยังไม่คืน'}
+                      {isReturned ? 'คืนแล้ว' : 'ยังไม่คืน'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* 3. Detail Section: วันที่ยืม - วันที่คืน */}
+                <View className="mt-1 flex-row items-center justify-between border-t border-gray-100 pt-3">
+                  <View>
+                    <Text className="text-[10px] font-bold uppercase tracking-tighter text-gray-400">
+                      วันที่ยืม
+                    </Text>
+                    <View className="mt-1 flex-row items-center">
+                      <Ionicons name="calendar-outline" size={14} color="#64748b" />
+                      <Text className="ml-1 text-sm font-semibold text-gray-600">
+                        {item.borrow_date}
                       </Text>
                     </View>
                   </View>
 
-                  {/* 4. วันที่คืน (2 ส่วน - ชิดขวา) */}
-                  <View className="flex-[2] items-end justify-center">
-                    <Text className={`text-xs font-bold ${isReturned ? 'text-gray-400' : 'text-blue-600'}`}>
-                      {item.return_date || 'รอการคืน'}
+                  <View className="items-end">
+                    <Text className="text-[10px] font-bold uppercase tracking-tighter text-gray-400">
+                      กำหนดคืน / วันที่คืน
                     </Text>
+                    <View className="mt-1 flex-row items-center">
+                      <Ionicons
+                        name={isReturned ? 'checkmark-circle-outline' : 'time-outline'}
+                        size={14}
+                        color={isReturned ? '#16a34a' : '#2563eb'}
+                      />
+                      <Text
+                        className={`ml-1 text-sm font-bold ${
+                          isReturned ? 'text-gray-500' : 'text-blue-600'
+                        }`}>
+                        {item.return_date || 'รอการส่งคืน'}
+                      </Text>
+                    </View>
                   </View>
-
                 </View>
-              );
-            }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            ListEmptyComponent={
-              <View className="mt-20 items-center p-10">
-                <Text className="text-lg font-medium text-gray-400">ยังไม่มีประวัติการทำรายการ</Text>
               </View>
-            }
-          />
-        </View>
+            );
+          }}
+        />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

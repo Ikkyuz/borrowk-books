@@ -10,16 +10,13 @@ export default function LibraryLayout() {
         },
         headerTintColor: '#fff',
         tabBarActiveTintColor: '#3b82f6',
-      }}
-    >
+      }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'หนังสือ',
           tabBarLabel: 'Books',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -27,9 +24,7 @@ export default function LibraryLayout() {
         options={{
           title: 'สมาชิก',
           tabBarLabel: 'Members',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

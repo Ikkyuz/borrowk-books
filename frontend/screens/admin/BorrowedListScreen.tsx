@@ -1,86 +1,133 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { borrowings, books, members } from '../../data/library';
-import BorrowingCard from '../../components/BorrowingCard';
+import { Ionicons } from '@expo/vector-icons';
+import AdminHeader from '../../components/AdminHeader';
 
 export default function BorrowedListScreen() {
-  const activeBorrowings = borrowings.filter(b => b.status === 'borrowed' || !b.return_date);
+  const [searchQuery, setSearchQuery] = useState('');
+  const activeBorrowings = borrowings.filter((b) => !b.return_date);
+
+  const filteredBorrowings = activeBorrowings.filter((item) => {
+    const book = books.find((b) => b.book_id === item.book_id);
+    const member = members.find((m) => m.member_id === item.member_id);
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      book?.title.toLowerCase().includes(searchLower) ||
+      member?.full_name.toLowerCase().includes(searchLower) ||
+      item.book_id.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-slate-900 pt-16 pb-8 px-6">
-        <View className="max-w-5xl mx-auto w-full">
-          <Text className="text-white text-4xl font-extrabold tracking-tight">รายการที่ถูกยืม</Text>
-          <Text className="text-slate-400 mt-2 text-lg">ติดตามสถานะหนังสือที่สมาชิกกำลังยืมอยู่</Text>
-        </View>
-      </View>
+      <AdminHeader
+        title="การยืมปัจจุบัน"
+        subtitle="Active Borrowings"
+        variant="dark"
+        iconName="receipt-outline"
+      />
 
-      <View className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10">
-        <View className="mb-10 px-2">
-          <Text className="text-4xl font-black text-slate-900 tracking-tighter">รายการที่ถูกยืม</Text>
-          <View className="h-1.5 w-20 bg-blue-600 mt-2 rounded-full" />
-        </View>
-
-        {/* Table Container */}
-        <View className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-100">
-          {/* Table Header Row */}
-          <View className="flex-row items-center px-6 py-4 bg-slate-50 border-b border-slate-200">
-            <View className="flex-[4] pr-4">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">หนังสือ / ผู้ยืม</Text>
-            </View>
-            <View className="flex-[3] px-2">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider text-left">วันที่ยืม</Text>
-            </View>
-            <View className="flex-[3] px-2 items-center">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">สถานะ</Text>
-            </View>
-            <View className="flex-[2] items-end">
-              <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider">จัดการ</Text>
-            </View>
+      {/* Main Content */}
+      <View className="-mt-8 flex-1 px-4 pt-4">
+        <View className="mx-auto w-full max-w-5xl flex-1">
+          {/* Search Bar - Outside Header */}
+          <View className="mb-6 flex-row items-center rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+            <Ionicons name="search" size={20} color="#94a3b8" />
+            <TextInput
+              className="ml-3 flex-1 text-base text-slate-800"
+              placeholder="ค้นหาตามชื่อหนังสือ หรือผู้ยืม..."
+              placeholderTextColor="#94a3b8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
           </View>
 
           <FlatList
-            data={activeBorrowings}
+            data={filteredBorrowings}
             keyExtractor={(item) => item.borrow_id.toString()}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
             renderItem={({ item }) => {
-              const book = books.find(b => b.book_id === item.book_id);
-              const member = members.find(m => m.member_id === item.member_id);
+              const book = books.find((b) => b.book_id === item.book_id);
+              const member = members.find((m) => m.member_id === item.member_id);
+
               return (
-                <View className="flex-row items-center px-6 py-5 border-b border-slate-100">
-                  {/* Col-span-4: Book & Member */}
-                  <View className="flex-[4] pr-4">
-                    <Text className="text-sm font-bold text-slate-900 leading-snug" numberOfLines={1}>
-                      {book?.title || 'ไม่พบข้อมูล'}
-                    </Text>
-                    <Text className="text-xs text-slate-500 mt-1 font-medium">ผู้ยืม: {member?.full_name || 'ไม่พบข้อมูล'}</Text>
+                <View className="mb-4 rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
+                  <View className="flex-row items-start justify-between">
+                    <View className="mr-4 flex-1">
+                      <View className="mb-1 flex-row items-center">
+                        <View className="mr-2 rounded-lg bg-orange-100 px-2 py-1">
+                          <Text className="text-[10px] font-bold uppercase text-orange-700">
+                            กำลังยืม
+                          </Text>
+                        </View>
+                        <Text className="text-[11px] font-medium text-slate-400">
+                          #{item.book_id}
+                        </Text>
+                      </View>
+                      <Text
+                        className="text-lg font-bold leading-6 text-slate-800"
+                        numberOfLines={2}>
+                        {book?.title || 'ไม่พบข้อมูล'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                      <Ionicons name="ellipsis-vertical" size={20} color="#64748b" />
+                    </TouchableOpacity>
                   </View>
 
-                  {/* Col-span-3: Dates */}
-                  <View className="flex-[3] px-2">
-                    <Text className="text-sm text-slate-600 font-medium">{item.borrow_date}</Text>
-                  </View>
+                  <View className="mt-4 flex-row items-center justify-between border-t border-slate-50 pt-4">
+                    <View className="flex-row items-center">
+                      <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                        <Ionicons name="person" size={18} color="#3b82f6" />
+                      </View>
+                      <View>
+                        <Text className="mb-0.5 text-xs font-medium text-slate-400">ผู้ยืม</Text>
+                        <Text className="text-sm font-bold text-slate-700">
+                          {member?.full_name || 'ไม่พบข้อมูล'}
+                        </Text>
+                      </View>
+                    </View>
 
-                  {/* Col-span-3: Status */}
-                  <View className="flex-[3] items-center">
-                    <View className="px-4 py-1 rounded-full bg-orange-100">
-                      <Text className="text-[10px] font-black uppercase tracking-widest text-orange-700">ถูกยืม</Text>
+                    <View className="items-end">
+                      <Text className="mb-0.5 text-xs font-medium text-slate-400">วันที่ยืม</Text>
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="calendar-outline"
+                          size={14}
+                          color="#64748b"
+                          className="mr-1"
+                        />
+                        <Text className="ml-1 text-sm font-semibold text-slate-600">
+                          {item.borrow_date}
+                        </Text>
+                      </View>
                     </View>
                   </View>
 
-                  {/* Col-span-2: Action */}
-                  <TouchableOpacity className="flex-[2] items-end">
-                    <View className="bg-slate-900 px-4 py-2 rounded-xl">
-                      <Text className="text-white text-xs font-bold">จัดการ</Text>
-                    </View>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="mt-5 flex-row items-center justify-center rounded-2xl bg-slate-900 py-4">
+                    <Ionicons name="checkmark-circle-outline" size={18} color="white" />
+                    <Text className="ml-2 font-bold text-white">จัดการการคืนหนังสือ</Text>
                   </TouchableOpacity>
                 </View>
               );
             }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={
-              <View className="items-center mt-20 p-10">
-                <Text className="text-slate-400 text-lg font-medium">ไม่มีหนังสือที่ถูกยืมอยู่ในขณะนี้</Text>
+              <View className="mt-20 items-center p-10">
+                <View className="mb-6 h-24 w-24 items-center justify-center rounded-full bg-slate-100">
+                  <Ionicons name="search-outline" size={48} color="#cbd5e1" />
+                </View>
+                <Text className="text-center text-xl font-bold text-slate-500">
+                  {searchQuery ? 'ไม่พบข้อมูลที่ค้นหา' : 'ไม่มีหนังสือที่ถูกยืม'}
+                </Text>
+                <Text className="mt-2 text-center text-sm leading-5 text-slate-400">
+                  {searchQuery
+                    ? 'ลองเปลี่ยนคำค้นหาหรือลบคำค้นหาออก'
+                    : 'รายการยืมหนังสือที่รอดำเนินการจะแสดงที่นี่'}
+                </Text>
               </View>
             }
           />
