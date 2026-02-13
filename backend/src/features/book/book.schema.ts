@@ -1,5 +1,5 @@
 import { t, Static } from "elysia";
-import { BookStatus } from "@/provider/database/prismabox/BookStatus";
+import { BookStatus } from "@/provider/database/generated/enums";
 
 export const BookSchema = t.Object({
   id: t.Number(),
