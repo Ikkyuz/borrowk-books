@@ -1,27 +1,20 @@
-import { t } from "elysia";
+import { t, Static } from "elysia";
 
-export const borrowingSchema = {
-    id: t.Number(),
-    memberId: t.Number(),
-    bookId: t.Number(),
-    borrowDate: t.Date(),
-    returnDate: t.Optional(t.Date()),
-}
+export const BorrowingSchema = t.Object({
+  id: t.Number(),
+  memberId: t.Number(),
+  bookId: t.Number(),
+  borrowDate: t.String({ format: "date-time" }),
+  returnDate: t.Optional(t.Nullable(t.String({ format: "date-time" }))),
+});
 
-export const borrowingCreateSchema = {
-    memberId: t.Number(),
-    bookId: t.Number(),
-    borrowDate: t.Date(),
-    returnDate: t.Optional(t.Date()),
-}
+export const borrowingCreateSchema = t.Omit(BorrowingSchema, [
+  "id",
+  "borrowDate",
+  "returnDate",
+]);
+export const borrowingUpdateSchema = t.Partial(t.Omit(BorrowingSchema, ["id"]));
 
-export const borrowingUpdateSchema = {
-    memberId: t.Optional(t.Number()),
-    bookId: t.Optional(t.Number()),
-    borrowDate: t.Optional(t.Date()),
-    returnDate: t.Optional(t.Date()),
-}
-
-export type Borrowing = typeof borrowingSchema;
-export type BorrowingCreate = typeof borrowingCreateSchema;
-export type BorrowingUpdate = typeof borrowingUpdateSchema;
+export type Borrowing = Static<typeof BorrowingSchema>;
+export type BorrowingCreate = Static<typeof borrowingCreateSchema>;
+export type BorrowingUpdate = Static<typeof borrowingUpdateSchema>;

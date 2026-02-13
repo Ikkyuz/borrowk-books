@@ -1,25 +1,14 @@
-import { t } from "elysia";
+import { t, Static } from "elysia";
 import { BookStatus } from "@/provider/database/prismabox/BookStatus";
 
-export const bookSchema = {
-    id: t.Number(),
-    title: t.String(),
-    author: t.Optional(t.String()),
-    status: t.Enum(BookStatus),
-}
+export const BookSchema = t.Object({
+  id: t.Number(),
+  title: t.String(),
+  author: t.Optional(t.Nullable(t.String())),
+  status: t.Enum(BookStatus),
+});
 
-export const bookCreateSchema = {
-    title: t.String(),
-    author: t.Optional(t.String()),
-    status: t.Enum(BookStatus),
-}
+export const bookCreateUpdateSchema = t.Omit(BookSchema, ["id"]);
 
-export const bookUpdateSchema = {
-    title: t.Optional(t.String()),
-    author: t.Optional(t.String()),
-    status: t.Optional(t.Enum(BookStatus)),
-}
-
-export type Book = typeof bookSchema;
-export type BookCreate = typeof bookCreateSchema;
-export type BookUpdate = typeof bookUpdateSchema;
+export type Book = Static<typeof BookSchema>;
+export type BookCreateUpdate = Static<typeof bookCreateUpdateSchema>;

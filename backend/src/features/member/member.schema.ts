@@ -1,34 +1,19 @@
-import { Member } from './../../provider/database/prismabox/Member';
-import { t } from "elysia";
+import { t, Static } from "elysia";
 import { Role } from "@/provider/database/prismabox/Role";
 
-export const memberSchema = {
+export const MemberSchema = t.Object({
     id: t.Number(),
     username: t.String(),
     password: t.String(),
     fullName: t.String(),
     role: t.Enum(Role),
-}
+});
 
-export const memberCreateSchema = {
-    username: t.String(),
-    password: t.String(),
-    fullName: t.String(),
-    role: t.Enum(Role),
-}
+export const memberCreateSchema = t.Omit(MemberSchema, ["id"]);
+export const memberUpdateSchema = t.Partial(t.Omit(MemberSchema, ["id"]));
+export const memberLoginSchema = t.Pick(MemberSchema, ["username", "password"]);
 
-export const memberUpdateSchema = {
-    username: t.Optional(t.String()),
-    password: t.Optional(t.String()),
-    fullName: t.Optional(t.String()),
-    role: t.Optional(t.Enum(Role)),
-}
-
-export const memberLoginSchema = {
-    username: t.String(),
-    password: t.String(),
-}
-
-export type Member = typeof memberSchema;
-export type MemberCreate = typeof memberCreateSchema;
-export type MemberUpdate = typeof memberUpdateSchema;
+export type Member = Static<typeof MemberSchema>;
+export type MemberCreate = Static<typeof memberCreateSchema>;
+export type MemberUpdate = Static<typeof memberUpdateSchema>;
+export type MemberLogin = Static<typeof memberLoginSchema>;

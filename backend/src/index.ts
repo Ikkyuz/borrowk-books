@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { corsMiddleware } from "./shared/middleware/cors";
-// import { app as features } from "./features/app";
+import { appFeatures } from "./features/app";
 import jwt from "@elysiajs/jwt";
 
 const app = new Elysia()
@@ -11,7 +11,7 @@ const app = new Elysia()
       secret: process.env.JWT_SECRET || "supersecret",
   }))
   .use(swagger({ path: "/docs" }))
-  // .use(features())
+  .use(appFeatures)
   .get("/", () => "Hello API")
   .listen({ port: process.env.PORT ?? 3000 });
 
