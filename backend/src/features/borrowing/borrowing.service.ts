@@ -7,6 +7,14 @@ export namespace BorrowingService {
     return await BorrowingRepository.findAll();
   }
 
+  export async function getMemberHistory(memberId: number) {
+    return await BorrowingRepository.findByMemberId(memberId);
+  }
+
+  export async function getActiveBorrowings() {
+    return await BorrowingRepository.findActive();
+  }
+
   export async function getBorrowingById(id: number) {
     const borrowing = await BorrowingRepository.findById(id);
     if (!borrowing) throw new Error("Borrowing record not found");

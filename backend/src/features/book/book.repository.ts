@@ -10,6 +10,12 @@ export namespace BookRepository {
     return await prisma.book.findUnique({ where: { id } });
   }
 
+  export async function findAvailable() {
+    return await prisma.book.findMany({
+      where: { status: "available" },
+    });
+  }
+
   export async function create(data: BookCreateUpdate) {
     return await prisma.book.create({ data });
   }

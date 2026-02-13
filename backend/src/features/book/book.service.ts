@@ -6,6 +6,10 @@ export namespace BookService {
     return await BookRepository.findAll();
   }
 
+  export async function getAvailableBooks() {
+    return await BookRepository.findAvailable();
+  }
+
   export async function getBookById(id: number) {
     const book = await BookRepository.findById(id);
     if (!book) throw new Error("Book not found");

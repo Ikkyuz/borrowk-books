@@ -35,12 +35,15 @@
     "@types/react": "~18.3.12",
     "@types/react-native": "^0.72.8",
     "eslint": "^9.25.1",
-    "eslint-config-expo": "~8.0.1",
+    "eslint-config-expo": "^10.0.0",
     "eslint-config-prettier": "^10.1.2",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.3.3"
+  },
+  "overrides": {
+    "tar": "7.5.7"
   },
   "main": "expo-router/entry",
   "private": true

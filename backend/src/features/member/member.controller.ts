@@ -1,14 +1,21 @@
 import { Elysia, t } from "elysia";
 import { MemberService } from "./member.service";
 import { memberCreateSchema, memberUpdateSchema, memberLoginSchema, MemberSchema } from "./member.schema";
+import { authMiddleware } from "@/shared/middleware/auth";
 
 export namespace MemberController {
     export const routes = new Elysia({ prefix: "/members" })
-        .get("/", () => MemberService.getMembers(), {
+        .get("/", async ({ isAdmin }) => {
+            await isAdmin();
+            return MemberService.getMembers();
+        }, {
             response: t.Array(MemberSchema),
             detail: { tags: ["Member"] }
         })
-        .get("/:id", ({ params: { id } }) => MemberService.getMemberById(Number(id)), {
+        .get("/:id", async ({ params: { id }, isUser }) => {
+            await isUser(Number(id));
+            return MemberService.getMemberById(Number(id));
+        }, {
             params: t.Object({ id: t.String() }),
             response: MemberSchema,
             detail: { tags: ["Member"] }
@@ -18,13 +25,19 @@ export namespace MemberController {
             response: MemberSchema,
             detail: { tags: ["Member"] }
         })
-        .put("/:id", ({ params: { id }, body }) => MemberService.updateMember(Number(id), body), {
+        .put("/:id", async ({ params: { id }, body, isUser }) => {
+            await isUser(Number(id));
+            return MemberService.updateMember(Number(id), body);
+        }, {
             params: t.Object({ id: t.String() }),
             body: memberUpdateSchema,
             response: MemberSchema,
             detail: { tags: ["Member"] }
         })
-        .delete("/:id", ({ params: { id } }) => MemberService.deleteMember(Number(id)), {
+        .delete("/:id", async ({ params: { id }, isAdmin }) => {
+            await isAdmin();
+            return MemberService.deleteMember(Number(id));
+        }, {
             params: t.Object({ id: t.String() }),
             response: MemberSchema,
             detail: { tags: ["Member"] }

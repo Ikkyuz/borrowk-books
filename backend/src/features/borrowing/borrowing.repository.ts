@@ -21,6 +21,27 @@ export namespace BorrowingRepository {
     });
   }
 
+  export async function findByMemberId(memberId: number) {
+    return await prisma.borrowing.findMany({
+      where: { memberId },
+      include: {
+        book: true,
+      },
+      orderBy: { borrowDate: "desc" },
+    });
+  }
+
+  export async function findActive() {
+    return await prisma.borrowing.findMany({
+      where: { returnDate: null },
+      include: {
+        member: true,
+        book: true,
+      },
+      orderBy: { borrowDate: "desc" },
+    });
+  }
+
   export async function create(data: BorrowingCreate) {
     return await prisma.borrowing.create({
       data: {
